@@ -1,5 +1,6 @@
 from skpmem.async_pmem import PersistentMemory
 from chat_assistant import ChatAssistant, ModelManager
+from json_repair import loads
 
 
 ################################################################################
@@ -66,8 +67,23 @@ ___answer___
 
 
 # インタビュー結果から概要を抽出する AI のプロンプト
-summary_prompt = f"""
+summary_prompt = """
 分析は除いて、総評や結論・点数・人格プロファイリングを抽出して。
+"""
+
+
+score_prompt = """
+分析や結論やプロファイリングは覗いて、点数のみを以下のフォーマットで JSON 化してください。
+```json
+{
+  "知性": 0,
+  "コミュニケーション能力": 0,
+  "理解力・推論力": 0,
+  "人間的": 0,
+  "創作性・独創性": 0,
+  "分析能力": 0
+}
+```
 """
 
 
@@ -115,8 +131,8 @@ async def test(model:str):
     async with PersistentMemory(f"log_{model.replace("/","_")}.db") as pm:
         interview_ai = ChatAssistant(model_manager=ModelManager(models=[model]), memory=pm)
         result = await interview_ai.chat(message=question)
-
         print(result)
+
         print("---------")
 
         analyze_ai = ChatAssistant(model_manager=ModelManager(models=[analyzer]), memory=pm)
@@ -125,8 +141,14 @@ async def test(model:str):
 
         summary_ai = ChatAssistant(model_manager=ModelManager(models=[summary]), memory=pm)
         summary_result = await summary_ai.chat(message=summary_prompt, chat_log=[message, analyze_result])
-
         print(summary_result)
+
+        scure_result = await summary_ai.chat(message=score_prompt, chat_log=[message, analyze_result])
+        score_json = loads(scure_result.replace('```json', '```').split('```')[1].strip())
+        print(score_json)
+    
+    print()
+    print()
 
 
 async def main():
