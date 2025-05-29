@@ -36,15 +36,28 @@ AIに以下の内容をインタビューしました。
 とあるAIから以下のインタビューの結果を得ました。
 この回答を分析し
  - AI の思考方法・推論スタイル
- - 頭の良さ
+ - 頭の良さ・知的レベル
  - 理解・価値観
  - 性格
  - コミュニケーション特性
- - 主義主張、強み、弱み、知的レベル、バイアス、発想のユニークさ、創作能力など、多角的に分析してください。
-その上で以下の項目を数値化してください。
+ - 主義
+ - 強み・弱み
+ - バイアス
+ - 発想のユニークさ
+ - 創作能力
+などを、多角的に分析してください。
+
+その上で以下の項目を 0 ～ 100 点満点で数値化してください。
  - 知性
- - 
-その上で最後に、このAIの性格のプロファイリング結果を人間の人格に例えてください。
+ - コミュニケーション能力
+ - 理解力・推論力
+ - 人間的
+ - 創作性・独創性
+ - 分析能力
+
+最後に、このAIの性格のプロファイリング結果を人間の人格に例えてください。
+
+以下が分析対象の、AI の回答です。
 
 ```
 ___answer___
@@ -54,7 +67,7 @@ ___answer___
 
 # インタビュー結果から概要を抽出する AI のプロンプト
 summary_prompt = f"""
-分析は除いて、評価・結論・人格・コメントや補足を抽出して。
+分析は除いて、総評や結論・点数・人格プロファイリングを抽出して。
 """
 
 
@@ -77,6 +90,7 @@ models = [
     "openai/gpt-4o-mini",
     "anthropic/claude-sonnet-4-20250514",
     "anthropic/claude-opus-4-20250514",
+    "anthropic/claude-3-7-sonnet-20250219",
     "xai/grok-3-latest",
     "deepseek/deepseek-chat",
     "deepseek/deepseek-reasoner",
@@ -84,6 +98,7 @@ models = [
     "cohere/command-a-03-2025",
     "gemini/gemini-2.5-pro-preview-05-06",
     "gemini/gemini-2.5-flash-preview-05-20",
+    "gemini/gemma-3n-e4b-it",
     "lambda/deepseek-r1-671b",
     "lambda/qwen3-32b-fp8",
     "lambda/llama3.1-8b-instruct",
@@ -95,12 +110,14 @@ models = [
 ################################################################################
 
 async def test(model:str):
-    print("------------------")
-    print(model)
+    print("------------------", model, "----------------")
     
     async with PersistentMemory(f"log_{model.replace("/","_")}.db") as pm:
         interview_ai = ChatAssistant(model_manager=ModelManager(models=[model]), memory=pm)
         result = await interview_ai.chat(message=question)
+
+        print(result)
+        print("---------")
 
         analyze_ai = ChatAssistant(model_manager=ModelManager(models=[analyzer]), memory=pm)
         message = analyze_prompt.replace("___answer___", result)
